@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Regime Dashboard</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --line: #e5e7eb;
+      --brand: #0f766e;
+      --brand-2: #0ea5a4;
+      --bull: #16a34a;
+      --bear: #dc2626;
+      --side: #f59e0b;
+      --warn: #b45309;
+      --high: #991b1b;
+      --ok: #166534;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Verdana, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 80% 0%, #ccfbf1, transparent 35%),
+        radial-gradient(circle at 0% 100%, #fde68a, transparent 35%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .container { max-width: 1120px; margin: 20px auto; padding: 0 16px 24px; }
+    .hero {
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      color: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.25);
+    }
+    .hero h1 { margin: 0 0 8px; font-size: 28px; }
+    .hero p { margin: 0; opacity: .95; }
+    .grid {
+      margin-top: 14px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+    }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+    @media (max-width: 960px) {
+      .span-4, .span-6, .span-8 { grid-column: span 12; }
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    input, select, button {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    button {
+      border: 0;
+      background: var(--ink);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .08s ease, opacity .2s ease;
+    }
+    button:hover { opacity: .95; }
+    button:active { transform: translateY(1px); }
+    .status { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--bear); }
+
+    .metric-title { margin: 0; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .metric-value { margin: 6px 0 0; font-size: 24px; font-weight: 700; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 999px; font-weight: 700; font-size: 13px;
+      border: 1px solid transparent;
+    }
+    .badge.bull { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .badge.bear { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .badge.sideways { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .badge.alert-none { background: #dcfce7; color: #166534; }
+    .badge.alert-medium { background: #fef3c7; color: #92400e; }
+    .badge.alert-high { background: #fee2e2; color: #991b1b; }
+
+    .meter {
+      height: 12px;
+      width: 100%;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+    .meter > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0ea5a4, #0f766e);
+      transition: width .5s ease;
+    }
+
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .prob-row { margin: 9px 0; }
+    .prob-label { font-size: 13px; min-width: 80px; }
+    .prob-val { font-size: 12px; color: var(--muted); min-width: 54px; text-align: right; }
+    .prob-track { flex: 1; height: 8px; border-radius: 999px; background: #eceff1; overflow: hidden; }
+    .prob-fill { height: 100%; width: 0%; transition: width .4s ease; }
+
+    .alert-box {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .alert-box.high { background: #fef2f2; border-color: #fecaca; color: #7f1d1d; }
+    .alert-box.medium { background: #fffbeb; border-color: #fde68a; color: #78350f; }
+    .alert-box.none { background: #f0fdf4; border-color: #bbf7d0; color: #14532d; }
+
+    .chart {
+      width: 100%;
+      height: 180px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #fff, #f8fafc);
+      position: relative;
+      overflow: hidden;
+    }
+    .chart svg { width: 100%; height: 100%; display: block; }
+    .chart-title { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .json-box {
+      background: #0b1220;
+      color: #d1e3ff;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      max-height: 220px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>Market Regime Live Dashboard</h1>
+      <p>Live yfinance fetch -> feature engineering -> regime and transition signal</p>
+    </section>
+
+    <section class="grid">
+      <div class="card span-4">
+        <label>Mode</label>
+        <select id="mode">
+          <option value="combined">combined</option>
+          <option value="regime">regime</option>
+          <option value="transition">transition</option>
+        </select>
+      </div>
+      <div class="card span-4">
+        <label>Lookback Days</label>
+        <input id="lookback" type="number" value="420" min="300" max="2000" />
+      </div>
+      <div class="card span-4">
+        <label>Ticker</label>
+        <input id="ticker" value="^NSEI" />
+      </div>
+      <div class="card span-4">
+        <label>VIX Ticker</label>
+        <input id="vix" value="^INDIAVIX" />
+      </div>
+      <div class="card span-4">
+        <label>USDINR Ticker</label>
+        <input id="usdinr" value="INR=X" />
+      </div>
+      <div class="card span-4">
+        <label>Crude Ticker</label>
+        <input id="crude" value="BZ=F" />
+      </div>
+      <div class="card span-12">
+        <button id="runBtn">Run Live Prediction</button>
+        <div id="status" class="status">Idle</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div id="regimeCard" class="card span-4">
+        <p class="metric-title">Regime</p>
+        <div id="regimeBadge" class="badge sideways">N/A</div>
+      </div>
+      <div id="confidenceCard" class="card span-4">
+        <p class="metric-title">Confidence</p>
+        <p id="confidenceValue" class="metric-value">--</p>
+        <div class="meter"><span id="confidenceBar"></span></div>
+      </div>
+      <div id="alertLevelCard" class="card span-4">
+        <p class="metric-title">Alert Level</p>
+        <div id="alertBadge" class="badge alert-none">NONE</div>
+      </div>
+
+      <div id="probCard" class="card span-6">
+        <p class="chart-title">Regime Probabilities</p>
+        <div class="prob-row row">
+          <span class="prob-label">Bear</span>
+          <div class="prob-track"><div id="bearFill" class="prob-fill" style="background:#dc2626;"></div></div>
+          <span id="bearVal" class="prob-val">0%</span>
+        </div>
+        <div class="prob-row row">
+          <span class="prob-label">Sideways</span>
+          <div class="prob-track"><div id="sideFill" class="prob-fill" style="background:#f59e0b;"></div></div>
+          <span id="sideVal" class="prob-val">0%</span>
+        </div>
+        <div class="prob-row row">
+          <span class="prob-label">Bull</span>
+          <div class="prob-track"><div id="bullFill" class="prob-fill" style="background:#16a34a;"></div></div>
+          <span id="bullVal" class="prob-val">0%</span>
+        </div>
+      </div>
+
+      <div id="transitionCard" class="card span-6">
+        <p class="chart-title">Transition Signal</p>
+        <div class="row" style="margin-bottom:10px;">
+          <span class="muted">Probability</span>
+          <strong id="transitionProb">--</strong>
+        </div>
+        <div id="alertBox" class="alert-box none">No alert message yet.</div>
+      </div>
+
+      <div class="card span-6">
+        <p class="chart-title">Price (last 90 bars)</p>
+        <div class="chart"><svg id="priceChart"></svg></div>
+      </div>
+      <div class="card span-6">
+        <p class="chart-title">VIX (last 90 bars)</p>
+        <div class="chart"><svg id="vixChart"></svg></div>
+      </div>
+
+      <div class="card span-12">
+        <p class="chart-title">Live Data Info</p>
+        <div id="meta" class="muted">No run yet.</div>
+      </div>
+
+      <div class="card span-12">
+        <p class="chart-title">Raw Response</p>
+        <div id="raw" class="json-box">{}</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const rawEl = document.getElementById("raw");
+
+    function setStatus(msg, kind = "") {
+      statusEl.textContent = msg;
+      statusEl.className = `status ${kind}`;
+    }
+
+    function pct(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "--";
+      return `${(Number(v) * 100).toFixed(1)}%`;
+    }
+
+    function setProb(idFill, idVal, p) {
+      const val = Math.max(0, Math.min(1, Number(p || 0)));
+      document.getElementById(idFill).style.width = `${val * 100}%`;
+      document.getElementById(idVal).textContent = `${(val * 100).toFixed(1)}%`;
+    }
+
+    function setRegimeBadge(regime) {
+      const el = document.getElementById("regimeBadge");
+      const key = (regime || "N/A").toLowerCase();
+      el.textContent = regime || "N/A";
+      el.className = "badge " + (key.includes("bull") ? "bull" : key.includes("bear") ? "bear" : "sideways");
+    }
+
+    function setAlert(level, message) {
+      const badge = document.getElementById("alertBadge");
+      const lv = (level || "NONE").toUpperCase();
+      badge.textContent = lv;
+      badge.className = "badge " + (lv === "HIGH" ? "alert-high" : lv === "MEDIUM" ? "alert-medium" : "alert-none");
+
+      const box = document.getElementById("alertBox");
+      box.textContent = message || (lv === "NONE" ? "No active transition alert." : "Alert active.");
+      box.className = "alert-box " + (lv === "HIGH" ? "high" : lv === "MEDIUM" ? "medium" : "none");
+    }
+
+    function drawLine(svgId, series, color) {
+      const svg = document.getElementById(svgId);
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      if (!series || !series.length) return;
+
+      const w = svg.clientWidth || 500;
+      const h = svg.clientHeight || 180;
+      const pad = 12;
+
+      const vals = series.map(d => Number(d.close)).filter(v => Number.isFinite(v));
+      if (!vals.length) return;
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+      const span = Math.max(max - min, 1e-9);
+
+      const points = series.map((d, i) => {
+        const x = pad + (i / Math.max(series.length - 1, 1)) * (w - 2 * pad);
+        const y = h - pad - ((Number(d.close) - min) / span) * (h - 2 * pad);
+        return `${x},${y}`;
+      }).join(" ");
+
+      const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      poly.setAttribute("fill", "none");
+      poly.setAttribute("stroke", color);
+      poly.setAttribute("stroke-width", "2.5");
+      poly.setAttribute("points", points);
+      svg.appendChild(poly);
+
+      const minTxt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      minTxt.setAttribute("x", 8);
+      minTxt.setAttribute("y", h - 6);
+      minTxt.setAttribute("font-size", "10");
+      minTxt.setAttribute("fill", "#6b7280");
+      minTxt.textContent = `min ${min.toFixed(2)}`;
+      svg.appendChild(minTxt);
+
+      const maxTxt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      maxTxt.setAttribute("x", 8);
+      maxTxt.setAttribute("y", 12);
+      maxTxt.setAttribute("font-size", "10");
+      maxTxt.setAttribute("fill", "#6b7280");
+      maxTxt.textContent = `max ${max.toFixed(2)}`;
+      svg.appendChild(maxTxt);
+    }
+
+    function applyModeLayout(mode) {
+      const m = (mode || "combined").toLowerCase();
+      const showRegime = m !== "transition";
+      const showTransition = m !== "regime";
+
+      document.getElementById("regimeCard").style.display = showRegime ? "" : "none";
+      document.getElementById("confidenceCard").style.display = showRegime ? "" : "none";
+      document.getElementById("probCard").style.display = showRegime ? "" : "none";
+      document.getElementById("transitionCard").style.display = showTransition ? "" : "none";
+      document.getElementById("alertLevelCard").style.display = m === "combined" ? "" : "none";
+    }
+
+    function renderResult(data) {
+      const r = data.result || {};
+      rawEl.textContent = JSON.stringify(data, null, 2);
+      const mode = (r.live_data_meta && r.live_data_meta.mode) || document.getElementById("mode").value || "combined";
+      applyModeLayout(mode);
+
+      if (mode !== "transition") {
+        setRegimeBadge(r.regime);
+      }
+
+      const conf = r.adjusted_confidence ?? r.top_confidence ?? r.raw_confidence ?? 0;
+      document.getElementById("confidenceValue").textContent = pct(conf);
+      document.getElementById("confidenceBar").style.width = `${Math.max(0, Math.min(1, Number(conf))) * 100}%`;
+
+      if (mode !== "transition") {
+        setProb("bearFill", "bearVal", r.prob_bear);
+        setProb("sideFill", "sideVal", r.prob_sideways);
+        setProb("bullFill", "bullVal", r.prob_bull);
+      }
+
+      if (mode !== "regime") {
+        const tProb = r.transition_probability ?? (r.transition_alert ? 1 : 0);
+        document.getElementById("transitionProb").textContent = pct(tProb);
+        setAlert(r.alert_level || (r.transition_alert ? "MEDIUM" : "NONE"), r.alert_message || r.message);
+      } else {
+        document.getElementById("transitionProb").textContent = "--";
+      }
+
+      const meta = r.live_data_meta || {};
+      document.getElementById("meta").textContent =
+        `Ticker: ${meta.ticker || "-"} | VIX: ${meta.vix_ticker || "-"} | ` +
+        `Lookback: ${meta.lookback_days || "-"} days | Latest bar: ${meta.latest_bar_time || "-"}`;
+
+      drawLine("priceChart", meta.price_tail || [], "#0f766e");
+      drawLine("vixChart", meta.vix_tail || [], "#f59e0b");
+    }
+
+    async function runPrediction() {
+      const btn = document.getElementById("runBtn");
+      btn.disabled = true;
+      setStatus("Fetching live market data and generating prediction...", "");
+
+      const body = {
+        mode: document.getElementById("mode").value,
+        lookback_days: Number(document.getElementById("lookback").value),
+        ticker: document.getElementById("ticker").value.trim(),
+        vix_ticker: document.getElementById("vix").value.trim(),
+        usdinr_ticker: document.getElementById("usdinr").value.trim() || null,
+        crude_ticker: document.getElementById("crude").value.trim() || null
+      };
+
+      try {
+        applyModeLayout(body.mode);
+        const res = await fetch("http://localhost:8000/predict/live", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setStatus(`Error ${res.status}: ${data.detail || "request failed"}`, "err");
+          rawEl.textContent = JSON.stringify(data, null, 2);
+        } else {
+          setStatus("Prediction completed.", "ok");
+          renderResult(data);
+        }
+      } catch (err) {
+        setStatus(`Network error: ${err}`, "err");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("runBtn").addEventListener("click", runPrediction);
+    applyModeLayout(document.getElementById("mode").value);
+    document.getElementById("mode").addEventListener("change", (e) => applyModeLayout(e.target.value));
+  </script>
+</body>
+</html>

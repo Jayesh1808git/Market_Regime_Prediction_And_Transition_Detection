@@ -1,0 +1,81 @@
+# ============================================================
+# Market Regime Prediction — Master Config (NSEI Edition)
+# ALL parameters live here. Never hardcode values in src/.
+# ============================================================
+
+data:
+  ticker: "^NSEI"
+  vix_ticker: "^INDIAVIX"
+  start_date: "2010-01-01"      # India VIX available from ~2009; 2010 is safe
+  end_date: "2026-03-01"
+  raw_path: "data/raw_ohlcv.csv"
+  vix_path: "data/raw_vix.csv"
+
+  # India-specific macro tickers
+  usdinr_ticker: "INR=X"        # USD/INR — rupee weakness = FII outflows = bearish
+  crude_ticker: "BZ=F"          # Brent crude — India is import-dependent
+  usdinr_path: "data/raw_usdinr.csv"
+  crude_path: "data/raw_crude.csv"
+
+hmm:
+  n_regimes: 3
+  vol_window: 21
+  random_seed: 42
+  labeled_path: "data/01_labeled_regimes.csv"
+  model_path: "data/hmm_model.pkl"
+
+features:
+  corr_threshold: 0.92
+  feature_matrix_path: "data/02_feature_matrix.csv"
+  selected_features_path: "data/selected_features.pkl"
+
+training:
+  wfv_start_year: 2015
+  wfv_end_year: 2024
+  random_seed: 42
+  model_comparison_path: "data/model_comparison.csv"
+
+  # NSEI: raised to 0.65 — Indian markets switch faster, need more sensitive alert
+  transition_alert_threshold: 0.65
+
+  models:
+    random_forest:
+      n_estimators: 300
+      max_depth: 8
+      min_samples_leaf: 15
+      max_features: "sqrt"
+      class_weight: "balanced"
+
+    xgboost:
+      n_estimators: 500
+      max_depth: 5
+      learning_rate: 0.05
+      subsample: 0.8
+      colsample_bytree: 0.8
+      reg_alpha: 0.1
+      reg_lambda: 1.0
+
+    lightgbm:
+      n_estimators: 450
+      max_depth: 6
+      learning_rate: 0.05
+      num_leaves: 31
+      subsample: 0.8
+      colsample_bytree: 0.8
+      reg_alpha: 0.1
+      reg_lambda: 1.0
+      class_weight: "balanced"
+      verbose: -1
+
+mlflow:
+  experiment_name: "market_regime_prediction"
+  tracking_uri: "mlruns"
+
+deployment:
+  model_bundle_path: "models/best_model.pkl"
+  api_host: "0.0.0.0"
+  api_port: 8000
+
+regimes:
+  names: {0: "Bear", 1: "Sideways", 2: "Bull"}
+  colors: {"Bear": "#e74c3c", "Sideways": "#f39c12", "Bull": "#2ecc71"}

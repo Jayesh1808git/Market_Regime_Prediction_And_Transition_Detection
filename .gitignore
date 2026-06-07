@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Data & Models (too large for GitHub)
+data/raw_*.csv
+data/hmm_model.pkl
+data/01_labeled_regimes.csv
+data/02_feature_matrix.csv
+models/*.pkl
+
+# MLflow
+mlruns/
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db

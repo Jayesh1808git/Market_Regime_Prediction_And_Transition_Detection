@@ -1,0 +1,35 @@
+# filepath: c:\Users\Jayesh Gund\Documents\Desktop\Jayesh\Market_Regime_Pred\.github\workflows\deploy.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: python -m pytest  # Add tests in a tests/ directory
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker image
+        run: docker build -t market-regime-pred .
+      - name: Push to Docker Hub (optional)
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          docker tag market-regime-pred ${{ secrets.DOCKER_USERNAME }}/market-regime-pred
+          docker push ${{ secrets.DOCKER_USERNAME }}/market-regime-pred

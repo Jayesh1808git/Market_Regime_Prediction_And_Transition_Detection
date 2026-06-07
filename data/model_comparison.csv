@@ -1,0 +1,5 @@
+model,accuracy,f1_macro,f1_weighted,f1_bear,f1_sideways,f1_bull,transition_acc,f1_bear_display,f1_sideways_display,f1_bull_display,f1_bear_eval_folds,f1_sideways_eval_folds,f1_bull_eval_folds
+xgboost,0.9751,0.9217,0.9752,0.9496,0.87,0.9778,0.3,0.9496,0.8700,0.9778,5/9,9/9,9/9
+lightgbm,0.9705,0.9144,0.9706,0.9231,0.8648,0.9764,0.3,0.9231,0.8648,0.9764,5/9,9/9,9/9
+random_forest,0.976,0.906,0.9759,0.9313,0.8438,0.9818,0.037,0.9313,0.8438,0.9818,5/9,9/9,9/9
+naive_baseline,0.6125,0.3099,0.5024,0.0,0.0,0.7227,0.387,0.0000,0.0000,0.7227,5/9,9/9,9/9
